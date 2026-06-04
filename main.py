@@ -41,21 +41,8 @@ async def send_list(to, body, sections):
         await client.post(API_URL, json=payload, headers=headers)
 
 async def handle_message(to, text_body):
-    if to in AWAITING_PROBLEM:
-        await send_message(to, "Thank you for contacting The Middle Man Auto 🚘\nManagement will get back to you as soon as possible.")
-        del AWAITING_PROBLEM[to]
-        return
-
-    await send_list(to,
-        "👋 أهلاً بيك في The Middle Man Auto 🚘\n\nبرجاء اختيار الخدمة المطلوبة:",
-        [{"title": "خدماتنا", "rows": [
-            {"id": "sell", "title": "عرض عربية للبيع", "description": ""},
-            {"id": "inquire", "title": "الاستفسار عن عربية", "description": ""},
-            {"id": "broker", "title": "الانضمام كبروكر", "description": ""},
-            {"id": "admin", "title": "التواصل مع الإدارة", "description": ""}
-        ]}]
-    )
-
+   async def handle_message(to, text_body):
+    await send_message(to, "اهلا بيك")
 async def handle_interactive(to, reply_id):
     if reply_id == "sell":
         await send_message(to, """مرحبًا بيك في The Middle Man Auto 🚘
