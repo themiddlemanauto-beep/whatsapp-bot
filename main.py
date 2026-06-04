@@ -40,8 +40,8 @@ async def send_list(to, body, sections):
     async with httpx.AsyncClient() as client:
         await client.post(API_URL, json=payload, headers=headers)
 async def handle_message(to, text_body):
-   async def handle_message(to, text_body):
     await send_message(to, "اهلا بيك")
+    
 async def handle_interactive(to, reply_id):
     if reply_id == "sell":
         await send_message(to, """مرحبًا بيك في The Middle Man Auto 🚘
