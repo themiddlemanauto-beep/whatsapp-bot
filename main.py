@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 import httpx
 import os
 
@@ -41,8 +41,6 @@ async def send_list(to, body, sections):
         await client.post(API_URL, json=payload, headers=headers)
 
 async def handle_message(to, text_body):
-    text = text_body.strip()
-
     if to in AWAITING_PROBLEM:
         await send_message(to, "Thank you for contacting The Middle Man Auto 🚘\nManagement will get back to you as soon as possible.")
         del AWAITING_PROBLEM[to]
@@ -169,7 +167,7 @@ https://docs.google.com/forms/d/e/1FAIpQLSdq_oA6sOtWVsNB8XYIteIDRAAAHQPI_LCGC_MA
 async def verify(request: Request):
     params = dict(request.query_params)
     if params.get("hub.verify_token") == VERIFY_TOKEN and params.get("hub.mode") == "subscribe":
-        return int(params["hub.challenge"])
+        return PlainTextResponse(params["hub.challenge"])
     return JSONResponse(content={"error": "Invalid token"}, status_code=403)
 
 @app.post("/webhook")
