@@ -11,7 +11,7 @@ PHONE_NUMBER_ID = os.environ.get("PHONE_NUMBER_ID")
 API_URL = f"https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/messages"
 
 AWAITING_PROBLEM = {}
-
+ADMIN_NUMBER = "201025596761"
 async def send_message(to, text):
     headers = {"Authorization": f"Bearer {ACCESS_TOKEN}", "Content-Type": "application/json"}
     payload = {"messaging_product": "whatsapp", "to": to, "type": "text", "text": {"body": text}}
@@ -40,6 +40,29 @@ async def send_list(to, body, sections):
     async with httpx.AsyncClient() as client:
         await client.post(API_URL, json=payload, headers=headers)
 async def handle_message(to, text_body):
+
+    if to in AWAITING_PROBLEM:
+        await send_message(
+            ADMIN_NUMBER,
+            f"""🚨 طلب دعم جديد
+
+رقم العميل:
+{to}
+
+الرسالة:
+{text_body}
+"""
+        )
+
+        await send_message(
+            to,
+            "Thank you for contacting The Middle Man Auto 🚘\nManagement will get back to you as soon as possible."
+        )
+
+        del AWAITING_PROBLEM[to]
+        return
+
+   
     await send_list(
     to,
     "👋 أهلاً بيك في The Middle Man Auto 🚘\n\nبرجاء اختيار الخدمة المطلوبة:",
