@@ -12,7 +12,7 @@ API_URL = f"https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/messages"
 
 AWAITING_NAME = {}
 AWAITING_PROBLEM = {}
-ADMIN_NUMBER = "201025596761"
+ADMIN_NUMBER = "01222682620"
 
 
 async def send_message(to, text):
