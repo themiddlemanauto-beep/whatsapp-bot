@@ -12,6 +12,7 @@ API_URL = f"https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/messages"
 
 AWAITING_NAME = {}
 AWAITING_PROBLEM = {}
+AWAITING_BROKER_INFO = {}
 ADMIN_NUMBER = "201222682620"
 
 
@@ -19,7 +20,9 @@ async def send_message(to, text):
     headers = {"Authorization": f"Bearer {ACCESS_TOKEN}", "Content-Type": "application/json"}
     payload = {"messaging_product": "whatsapp", "to": to, "type": "text", "text": {"body": text}}
     async with httpx.AsyncClient() as client:
-        await client.post(API_URL, json=payload, headers=headers)
+        r = await client.post(API_URL, json=payload, headers=headers)
+        if r.status_code != 200:
+            print(f"❌ send_message failed to {to}: {r.status_code} {r.text}")
 
 
 async def send_buttons(to, body, buttons):
@@ -30,7 +33,9 @@ async def send_buttons(to, body, buttons):
         "interactive": {"type": "button", "body": {"text": body}, "action": {"buttons": btn_list}}
     }
     async with httpx.AsyncClient() as client:
-        await client.post(API_URL, json=payload, headers=headers)
+        r = await client.post(API_URL, json=payload, headers=headers)
+        if r.status_code != 200:
+            print(f"❌ send_buttons failed to {to}: {r.status_code} {r.text}")
 
 
 async def send_list(to, body, sections):
@@ -43,7 +48,9 @@ async def send_list(to, body, sections):
         }
     }
     async with httpx.AsyncClient() as client:
-        await client.post(API_URL, json=payload, headers=headers)
+        r = await client.post(API_URL, json=payload, headers=headers)
+        if r.status_code != 200:
+            print(f"❌ send_list failed to {to}: {r.status_code} {r.text}")
 
 
 async def handle_message(to, text_body):
@@ -75,6 +82,25 @@ async def handle_message(to, text_body):
             "Thank you for contacting The Middle Man Auto 🚘\nManagement will get back to you as soon as possible."
         )
         del AWAITING_PROBLEM[to]
+        return
+
+    # Broker waitlist: user sent their name + phone → forward to admin, thank them
+    elif to in AWAITING_BROKER_INFO:
+        await send_message(
+            ADMIN_NUMBER,
+            f"""📋 طلب انضمام بروكر (قائمة انتظار)
+
+بيانات المتقدم:
+{text_body}
+
+📞 رقم الواتساب:
+{to}"""
+        )
+        await send_message(
+            to,
+            "شكراً لك! ✅\nتم تسجيل بياناتك في قائمة الانتظار، وسيتم التواصل معك مباشرةً عند فتح باب التقديم مرة أخرى. 🤝"
+        )
+        del AWAITING_BROKER_INFO[to]
         return
 
     # Default: send welcome message then the service list
@@ -129,45 +155,22 @@ https://docs.google.com/forms/d/e/1FAIpQLSeqe27IbdYay1PK-TGjbsoqok7CVEe9E7D4ZdxG
 
 https://docs.google.com/forms/d/e/1FAIpQLSdwrf3jnt-QIqm1cS1qb4WHjLr1i68HjoY71s4GJRGESEb6Uw/viewform?usp=publish-editor""")
 
-    # ─── الانضمام كبروكر ───────────────────────────────────────────────────────
+    # ─── الانضمام كبروكر (مغلق مؤقتًا) → جمع الاسم والرقم لقائمة الانتظار ──────
     elif reply_id == "broker":
-        await send_message(to, """مرحبًا بيك في
-The Middle Man Auto 🚘
+        AWAITING_BROKER_INFO[to] = True
+        await send_message(to, """⚠️ تنبيه هام
 
-إحنا شغالين بنظام Brokerage & Sales Network، يعني شغل حر قائم على العمولات بدون مرتب ثابت أو مواعيد حضور.
+تم إغلاق باب الانضمام لفريق البروكرز مؤقتًا بعد اكتمال العدد المطلوب.
 
-نظام العمولات:
-• نسبة العمولة تبدأ من 0.5%
-• الحد الأدنى للعمولة 5,000 جنيه
-• كل بروكر بيستلم عمولته فور إتمام البيع
-• كل عميل بيتسجل باسم البروكر داخل السيستم لضمان حفظ الحقوق
-• مع زيادة النشاط والمبيعات، فيه فرص لزيادة نسبة العمولة وتحقيق دخل أعلى
+في حالة رغبتك بالانضمام عند فتح التقديم مرة أخرى، يُرجى إرسال:
+• الاسم بالكامل
+• رقم الهاتف
 
-دورك كبروكر:
-• تسويق السيارات
-• نشر الإعلانات
-• جلب العملاء المهتمين
+وسيتم التواصل معك مباشرةً عند فتح باب التقديم مرة أخرى.
 
-أما الإدارة فهي المسؤولة عن:
-• التواصل مع مالك السيارة
-• إدارة المعاينات
-• التفاوض والاتفاق النهائي
-• إنهاء البيع بالكامل
+شكرًا لاهتمامكم بالانضمام إلى The Middle Man Auto، وسيتم الإعلان قريبًا عن موعد فتح التقديم من جديد. 🙏""")
 
-وده بيخليك تركز على البيع والتسويق فقط بدون ضغط المعاينات أو التفاوض.
-
-مميزات الشغل معانا:
-• تشتغل من أي مكان وفي أي وقت
-• بدون حضور معاينات
-• بدون التعامل المباشر مع المالك
-• كل عميل بيتسجل باسمك وحقك محفوظ
-• عمولات مجزية مع فرص نمو أكبر للمميزين
-
-⚠️ جميع العملاء والمتابعات بتتم من خلال سيستم CRM مخصص لتنظيم الشغل وحفظ حقوق كل بروكر داخل الشركة.""")
-        await send_buttons(to, "هل توافق على الانضمام لفريقنا؟",
-            [{"id": "broker_yes1", "title": "✅ موافق"}, {"id": "broker_no", "title": "❌ غير موافق"}])
-
-    # ─── موافق على الانضمام → عرض اللائحة ────────────────────────────────────
+    # ─── موافق على الانضمام → عرض اللائحة (نائم حاليًا — باب الانضمام مغلق) ────
     elif reply_id == "broker_yes1":
         await send_message(to, """📋 لائحة بروكرز The Middle Man Auto
 
@@ -226,7 +229,7 @@ The Middle Man Auto 🚘
         await send_buttons(to, "هل توافق على اللائحة وشروط العمل؟",
             [{"id": "broker_yes2", "title": "✅ موافق"}, {"id": "broker_no", "title": "❌ غير موافق"}])
 
-    # ─── موافق على اللائحة → إرسال دليل البروكر كاملاً (رسالتين) ────────────
+    # ─── موافق على اللائحة → إرسال دليل البروكر كاملاً (نائم حاليًا) ────────────
     elif reply_id == "broker_yes2":
 
         # ── الرسالة الأولى: دليل البروكر مع الروابط ──
